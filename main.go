@@ -6,7 +6,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+var wg sync.WaitGroup
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
@@ -23,7 +26,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Entrez votre numero")
+	fmt.Println("Entrez votre numero\n\rTips: Le numéro doit être supérieur ou égal à 1")
 	num, _ := reader.ReadString('\n')
 	num = strings.Trim(num, " \r\n")
 	numConv, err := strconv.Atoi(num)
@@ -34,7 +37,22 @@ func main() {
 	}
 
 	n1 := newNoeud(numConv, text, portNum)
-	go n1.election()
-	n1.reception()
+
+	fmt.Printf("Bienvenue noeud %d\nAdresse :%s:%d\n Poids %d Voulez-vous lancer l'élection? Oui(O) ou Non(N)\n", n1.numeroOrdre, n1.ad.ip, n1.ad.port, n1.moi)
+
+	choix, _ := reader.ReadString('\n')
+	choix = strings.Trim(choix, " \r\n")
+
+	wg.Add(1)
+	go n1.reception()
+
+	switch choix {
+	case "O":
+		n1.election()
+	default:
+		fmt.Println("En attente de communication avec les autres noeuds")
+	}
+
+	wg.Wait()
 
 }

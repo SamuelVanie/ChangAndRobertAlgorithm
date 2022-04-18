@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // adresse d'un noeud du système
@@ -35,7 +36,7 @@ type noeud struct {
 	numeroOrdre int
 
 	ad       adresse
-	candidat chan bool
+	candidat bool
 
 	// liste des adresses de tous les noeuds de l'anneau
 	listeNoeud []adresse
@@ -66,34 +67,33 @@ func (n *noeud) init() {
 }
 
 // Lancer le processus d'élection
-func (n *noeud) election() {
-	fichier, err := os.Open("ip.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
+func (n *noeud) election(num ...int) {
 
-	fileScanner := bufio.NewScanner(fichier)
+	var connection net.Conn
+	var err error
 
-	fileScanner.Split(bufio.ScanLines)
-	for i := n.numeroOrdre; fileScanner.Scan() && i > 0; i -= 1 {
+	if n.numeroOrdre >= len(n.listeNoeud) {
+		connection, err = net.Dial("tcp", fmt.Sprintf("%s:%d", n.listeNoeud[0].ip, n.listeNoeud[0].port))
+	} else {
+		connection, err = net.Dial("tcp", fmt.Sprintf("%s:%d", n.listeNoeud[n.numeroOrdre].ip, n.listeNoeud[n.numeroOrdre].port))
 	}
-	ligne := fileScanner.Text()
-	tokens := strings.Split(ligne, " ")
-	port, err := strconv.Atoi(tokens[1])
-	if err != nil {
-		panic(err)
-	}
-	connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", tokens[0], port))
 	defer connection.Close()
 
 	if err != nil {
 		panic(err)
 	}
 
+	if len(num) == 0 {
+		message := fmt.Sprintf("ELECTION %d", n.moi)
+		io.WriteString(connection, message)
+	} else {
+		message := fmt.Sprintf("ELECTION %d", num[0])
+		io.WriteString(connection, message)
+	}
+
 	// message de la forme ELECTION 4395435
 	// Envoyer le message au prochain dans l'anneau ie noeud avec numeroOrdre + 1
-	message := fmt.Sprintf("ELECTION %d", n.moi)
-	io.WriteString(connection, message)
+
 }
 
 // Signaler à tous les autres noeuds, l'arrivée de cet noeud
@@ -114,27 +114,35 @@ func (n *noeud) broadcast(ipaddr string) {
 	}
 }
 
+// Signaler à tous qui est l'elu
+func (n *noeud) elu() {
+	for _, ad := range n.listeNoeud {
+		if ad.port != n.ad.port {
+			connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ad.ip, ad.port))
+			defer connection.Close()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			message := fmt.Sprintf("ELU %d:%d", n.numeroOrdre, n.moi)
+			io.WriteString(connection, message)
+		}
+	}
+}
+
 // Création d'un noeud
 func newNoeud(num int, ip string, port int) *noeud {
+	rand.Seed(time.Now().UnixNano())
 	n := &noeud{
 		moi:         rand.Int(),
 		numeroOrdre: num,
 		ad:          *newAdresse(ip, port),
-		candidat:    make(chan bool),
+		candidat:    false,
 		listeNoeud:  []adresse{},
 	}
 	n.init()
 	return n
-}
-
-//traitement d'un message par le noeud
-//connection : la connection entrante
-func traitement(connection net.Conn) {
-	scanner := bufio.NewScanner(connection)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
-	connection.Close()
 }
 
 // recéption d'un message par le noeud
@@ -152,6 +160,47 @@ func (n *noeud) reception() {
 			fmt.Println(err)
 		}
 
-		go traitement(connection)
+		scanner := bufio.NewScanner(connection)
+
+		for scanner.Scan() {
+			recu := scanner.Text()
+			fmt.Printf("J'ai reçu le message suivant %s\n", recu)
+			ligne := strings.Split(recu, " ")
+			commande := strings.Trim(ligne[0], " \r\n")
+			message := strings.Trim(ligne[1], " \r\n")
+
+			switch commande {
+			case "ELECTION":
+				num, err := strconv.Atoi(message)
+				if err != nil {
+					panic("L'élection se passe en comparant des nombres, j'ai reçu un autre type")
+				}
+				if num > n.moi {
+					n.candidat = true
+					connection.Close()
+					n.election(num)
+				} else if num < n.moi && !n.candidat {
+					n.candidat = true
+					connection.Close()
+					n.election()
+				} else {
+					connection.Close()
+					n.elu()
+				}
+				break
+			case "INFO":
+				break
+
+			case "ELU":
+				fmt.Printf("L'élu c'est le noeud %s il a pour priorité %s\n", strings.Split(message, ":")[0], strings.Split(message, ":")[1])
+				break
+
+			default:
+				fmt.Println("Je ne reconnais pas ce message")
+			}
+
+		}
+
+		connection.Close()
 	}
 }
