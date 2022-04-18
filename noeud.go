@@ -72,6 +72,8 @@ func (n *noeud) election(num ...int) {
 	var connection net.Conn
 	var err error
 
+	// Connection au prochain noeud de l'anneau
+	// Envoyer le message au prochain dans l'anneau ie noeud avec numeroOrdre + 1
 	if n.numeroOrdre >= len(n.listeNoeud) {
 		connection, err = net.Dial("tcp", fmt.Sprintf("%s:%d", n.listeNoeud[0].ip, n.listeNoeud[0].port))
 	} else {
@@ -83,16 +85,16 @@ func (n *noeud) election(num ...int) {
 		panic(err)
 	}
 
+	// message de la forme ELECTION 4395435
 	if len(num) == 0 {
 		message := fmt.Sprintf("ELECTION %d", n.moi)
+		fmt.Printf("J'envoi le message : %s\n", message)
 		io.WriteString(connection, message)
 	} else {
 		message := fmt.Sprintf("ELECTION %d", num[0])
+		fmt.Printf("J'envoi le message : %s\n", message)
 		io.WriteString(connection, message)
 	}
-
-	// message de la forme ELECTION 4395435
-	// Envoyer le message au prochain dans l'anneau ie noeud avec numeroOrdre + 1
 
 }
 
@@ -108,6 +110,7 @@ func (n *noeud) broadcast(ipaddr string) {
 				log.Fatal(err)
 			}
 
+			// message de la forme INFO 127.0.0.1:8080
 			message := fmt.Sprintf("INFO %s", ipaddr)
 			io.WriteString(connection, message)
 		}
@@ -176,10 +179,12 @@ func (n *noeud) reception() {
 					panic("L'élection se passe en comparant des nombres, j'ai reçu un autre type")
 				}
 				if num > n.moi {
+					// le numéro du site qui envoie est supérieur
 					n.candidat = true
 					connection.Close()
 					n.election(num)
 				} else if num < n.moi && !n.candidat {
+					// le numéro du site qui envoie est inférieur
 					n.candidat = true
 					connection.Close()
 					n.election()
