@@ -34,7 +34,7 @@ func main() {
 	}
 
 	n1 := newNoeud(numConv, text, portNum)
-	go n1.broadcast(n1.ad.ip)
+	go n1.election()
 	n1.reception()
 
 }

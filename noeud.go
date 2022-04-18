@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 )
 
+// adresse d'un noeud du système
 type adresse struct {
 	ip   string
 	port int
@@ -29,6 +31,8 @@ type noeud struct {
 	// numero du noeud dans l'anneau
 	// utiliser pour déterminer la priorité
 	moi int
+	// numéro d'ordre dans l'anneau
+	numeroOrdre int
 
 	ad       adresse
 	candidat chan bool
@@ -61,6 +65,37 @@ func (n *noeud) init() {
 
 }
 
+// Lancer le processus d'élection
+func (n *noeud) election() {
+	fichier, err := os.Open("ip.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileScanner := bufio.NewScanner(fichier)
+
+	fileScanner.Split(bufio.ScanLines)
+	for i := n.numeroOrdre; fileScanner.Scan() && i > 0; i -= 1 {
+	}
+	ligne := fileScanner.Text()
+	tokens := strings.Split(ligne, " ")
+	port, err := strconv.Atoi(tokens[1])
+	if err != nil {
+		panic(err)
+	}
+	connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", tokens[0], port))
+	defer connection.Close()
+
+	if err != nil {
+		panic(err)
+	}
+
+	// message de la forme ELECTION 4395435
+	// Envoyer le message au prochain dans l'anneau ie noeud avec numeroOrdre + 1
+	message := fmt.Sprintf("ELECTION %d", n.moi)
+	io.WriteString(connection, message)
+}
+
 // Signaler à tous les autres noeuds, l'arrivée de cet noeud
 // ipaddr : addresse ip du noeud
 func (n *noeud) broadcast(ipaddr string) {
@@ -80,12 +115,13 @@ func (n *noeud) broadcast(ipaddr string) {
 }
 
 // Création d'un noeud
-func newNoeud(moi int, ip string, port int) *noeud {
+func newNoeud(num int, ip string, port int) *noeud {
 	n := &noeud{
-		moi:        moi,
-		ad:         *newAdresse(ip, port),
-		candidat:   make(chan bool),
-		listeNoeud: []adresse{},
+		moi:         rand.Int(),
+		numeroOrdre: num,
+		ad:          *newAdresse(ip, port),
+		candidat:    make(chan bool),
+		listeNoeud:  []adresse{},
 	}
 	n.init()
 	return n
