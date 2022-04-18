@@ -7,10 +7,21 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
-var PORT int = 5999
+type adresse struct {
+	ip   string
+	port int
+}
+
+func newAdresse(ip string, port int) *adresse {
+	return &adresse{
+		ip:   ip,
+		port: port,
+	}
+}
 
 // Représente un noeud du système
 // Une machine de l'anneau
@@ -19,12 +30,11 @@ type noeud struct {
 	// utiliser pour déterminer la priorité
 	moi int
 
-	// adresse ip du noeud
-	ip       string
+	ad       adresse
 	candidat chan bool
 
-	// liste des adresses ip de tous les noeuds de l'anneau
-	listeNoeud []string
+	// liste des adresses de tous les noeuds de l'anneau
+	listeNoeud []adresse
 }
 
 // Récupérer la liste des noeuds depuis le fichier
@@ -40,59 +50,72 @@ func (n *noeud) init() {
 
 	fileScanner.Split(bufio.ScanLines)
 	for fileScanner.Scan() {
-		n.listeNoeud = append(n.listeNoeud, fileScanner.Text())
+		ligne := fileScanner.Text()
+		tokens := strings.Split(ligne, " ")
+		port, err := strconv.Atoi(tokens[1])
+		if err != nil {
+			continue
+		}
+		n.listeNoeud = append(n.listeNoeud, adresse{tokens[0], port})
 	}
 
 }
 
 // Signaler à tous les autres noeuds, l'arrivée de cet noeud
+// ipaddr : addresse ip du noeud
 func (n *noeud) broadcast(ipaddr string) {
-	for _, ip := range n.listeNoeud {
-		connection, err := net.Dial("tcp", fmt.Sprintf("%s:%v", ip, PORT))
-		log.Fatal(err)
+	for _, ad := range n.listeNoeud {
+		if ad.port != n.ad.port {
+			connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ad.ip, ad.port))
+			defer connection.Close()
 
-		defer connection.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		if err != nil {
-			log.Fatal(err)
+			message := fmt.Sprintf("INFO %s", ipaddr)
+			io.WriteString(connection, message)
 		}
-
-		io.WriteString(connection, ipaddr)
 	}
 }
 
 // Création d'un noeud
-func newNoeud(moi int, ip string) *noeud {
+func newNoeud(moi int, ip string, port int) *noeud {
 	n := &noeud{
 		moi:        moi,
-		ip:         ip,
+		ad:         *newAdresse(ip, port),
 		candidat:   make(chan bool),
-		listeNoeud: make([]string, 0),
+		listeNoeud: []adresse{},
 	}
 	n.init()
-	n.broadcast(ip)
 	return n
 }
 
-// mise à jour
-// Ajouter la dernière ligne du fichier à sa liste d'adresse ip de noeud
-func (n *noeud) miseAjour() {
-	fichier, err := os.Open("ip.txt")
+//traitement d'un message par le noeud
+//connection : la connection entrante
+func traitement(connection net.Conn) {
+	scanner := bufio.NewScanner(connection)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	connection.Close()
+}
 
+// recéption d'un message par le noeud
+func (n *noeud) reception() {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", n.ad.port))
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	defer fichier.Close()
-
-	reader := bufio.NewReader(fichier)
+	defer listener.Close()
 
 	for {
-		ligne, _, err := reader.ReadLine()
-
-		if err == io.EOF {
-			n.listeNoeud = append(n.listeNoeud, strings.TrimSpace(strings.Split(string(ligne), " ")[0]))
-			break
+		connection, err := listener.Accept()
+		if err != nil {
+			fmt.Println(err)
 		}
+
+		go traitement(connection)
 	}
 }
