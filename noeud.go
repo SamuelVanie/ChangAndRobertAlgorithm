@@ -56,7 +56,7 @@ func (n *noeud) init() {
 	fileScanner.Split(bufio.ScanLines)
 	for fileScanner.Scan() {
 		ligne := fileScanner.Text()
-		tokens := strings.Split(ligne, " ")
+		tokens := strings.Split(ligne, ":")
 		port, err := strconv.Atoi(tokens[1])
 		if err != nil {
 			continue
@@ -100,7 +100,7 @@ func (n *noeud) election(num ...int) {
 
 // Signaler à tous les autres noeuds, l'arrivée de cet noeud
 // ipaddr : addresse ip du noeud
-func (n *noeud) broadcast(ipaddr string) {
+func (n *noeud) broadcast(ip string, port int) {
 	for _, ad := range n.listeNoeud {
 		if ad.port != n.ad.port {
 			connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ad.ip, ad.port))
@@ -111,7 +111,7 @@ func (n *noeud) broadcast(ipaddr string) {
 			}
 
 			// message de la forme INFO 127.0.0.1:8080
-			message := fmt.Sprintf("INFO %s", ipaddr)
+			message := fmt.Sprintf("INFO %s:%d", ip, port)
 			io.WriteString(connection, message)
 		}
 	}
@@ -120,18 +120,27 @@ func (n *noeud) broadcast(ipaddr string) {
 // Signaler à tous qui est l'elu
 func (n *noeud) elu() {
 	for _, ad := range n.listeNoeud {
-		if ad.port != n.ad.port {
-			connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ad.ip, ad.port))
-			defer connection.Close()
+		connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ad.ip, ad.port))
+		defer connection.Close()
 
-			if err != nil {
-				log.Fatal(err)
-			}
+		if err != nil {
+			log.Fatal(err)
+		}
 
-			message := fmt.Sprintf("ELU %d:%d", n.numeroOrdre, n.moi)
-			io.WriteString(connection, message)
+		message := fmt.Sprintf("ELU %d:%d", n.numeroOrdre, n.moi)
+		io.WriteString(connection, message)
+	}
+}
+
+// Chercher dans la liste des noeuds
+// retourne vrai ou faux
+func (n *noeud) chercherAddr(ip string, port int) bool {
+	for _, ad := range n.listeNoeud {
+		if ad.port == port && ad.ip == ip {
+			return true
 		}
 	}
+	return false
 }
 
 // Création d'un noeud
@@ -144,7 +153,13 @@ func newNoeud(num int, ip string, port int) *noeud {
 		candidat:    false,
 		listeNoeud:  []adresse{},
 	}
+
 	n.init()
+	if !n.chercherAddr(ip, port) {
+		// Il faut au moins avoir deux adresses dans le fichier pour commencer
+		n.broadcast(ip, port)
+	}
+
 	return n
 }
 
@@ -194,7 +209,13 @@ func (n *noeud) reception() {
 				}
 				break
 			case "INFO":
-				break
+				elements := strings.Split(message, ":")
+				port, err := strconv.Atoi(elements[1])
+				if err != nil {
+					log.Fatal(err)
+				}
+				n.listeNoeud = append(n.listeNoeud, adresse{ip: elements[0], port: port})
+				fmt.Printf("Ajout de %s:%s dans l'anneau\n", elements[0], elements[1])
 
 			case "ELU":
 				fmt.Printf("L'élu c'est le noeud %s il a pour priorité %s\n", strings.Split(message, ":")[0], strings.Split(message, ":")[1])
