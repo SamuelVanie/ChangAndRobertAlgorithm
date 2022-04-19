@@ -40,7 +40,7 @@ sont distincts.
 
 ### Exécuter
 - Vous pouvez directement exécuter les fichiers binaires générés par moi-même dans le projet
-- Le fichier changAndRobertWin.exe pour *Windows* et le fichier changAndRobert pour *Linux*.
+- Le fichier changAndRobertWin.exe pour *Windows* et le fichier changAndRobert pour *Linux* et chandAndRobertMac pour *Mac*
 
 
 ---
