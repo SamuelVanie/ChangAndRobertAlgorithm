@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -48,7 +47,8 @@ func (n *noeud) init() {
 
 	fichier, err := os.Open("ip.txt")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Impossible d'ouvrir le fichier ip.txt")
+		os.Exit(1)
 	}
 
 	fileScanner := bufio.NewScanner(fichier)
@@ -82,7 +82,8 @@ func (n *noeud) election(num ...int) {
 	defer connection.Close()
 
 	if err != nil {
-		panic(err)
+		fmt.Println("La connection avec le site n'a pas pu être effectuée")
+		os.Exit(1)
 	}
 
 	// message de la forme ELECTION 4395435
@@ -107,7 +108,8 @@ func (n *noeud) broadcast(ip string, port int) {
 			defer connection.Close()
 
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("Impossible de communiquer avec ce noeud")
+				os.Exit(1)
 			}
 
 			// message de la forme INFO 127.0.0.1:8080
@@ -124,7 +126,8 @@ func (n *noeud) elu() {
 		defer connection.Close()
 
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Impossible de communiquer avec ce noeud")
+			os.Exit(1)
 		}
 
 		message := fmt.Sprintf("ELU %d:%d", n.numeroOrdre, n.moi)
@@ -167,7 +170,8 @@ func newNoeud(num int, ip string, port int) *noeud {
 func (n *noeud) reception() {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", n.ad.port))
 	if err != nil {
-		panic(err)
+		fmt.Println("Ecoute impossible sur ce port")
+		os.Exit(1)
 	}
 
 	defer listener.Close()
@@ -191,7 +195,8 @@ func (n *noeud) reception() {
 			case "ELECTION":
 				num, err := strconv.Atoi(message)
 				if err != nil {
-					panic("L'élection se passe en comparant des nombres, j'ai reçu un autre type")
+					fmt.Println("L'élection se passe en comparant des nombres, j'ai reçu un autre type")
+					os.Exit(1)
 				}
 				if num > n.moi {
 					// le numéro du site qui envoie est supérieur
@@ -212,7 +217,8 @@ func (n *noeud) reception() {
 				elements := strings.Split(message, ":")
 				port, err := strconv.Atoi(elements[1])
 				if err != nil {
-					log.Fatal(err)
+					fmt.Println("Entrez plutôt un nombre comme port svp")
+					os.Exit(1)
 				}
 				n.listeNoeud = append(n.listeNoeud, adresse{ip: elements[0], port: port})
 				fmt.Printf("Ajout de %s:%s dans l'anneau\n", elements[0], elements[1])

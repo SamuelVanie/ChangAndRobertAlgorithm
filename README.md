@@ -48,5 +48,4 @@ sont distincts.
 ## Auteur
 
 💪 **Samuel Michaël Vanié** ✅
-					⇓
 **Computer Sciences Engineering Student**

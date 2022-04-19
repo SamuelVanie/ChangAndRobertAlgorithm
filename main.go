@@ -24,7 +24,7 @@ func main() {
 
 	if err != nil {
 		fmt.Println("Entrez un port correct")
-		panic(err)
+		os.Exit(1)
 	}
 
 	fmt.Println("Entrez votre numero\n\rTips: Le numéro doit être supérieur ou égal à 1")
@@ -34,7 +34,7 @@ func main() {
 
 	if err != nil {
 		fmt.Println("Ceci n'est pas un nombre")
-		panic(err)
+		os.Exit(1)
 	}
 
 	n1 := newNoeud(numConv, text, portNum)
