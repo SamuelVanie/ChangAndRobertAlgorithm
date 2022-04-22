@@ -108,8 +108,7 @@ func (n *noeud) broadcast(ip string, port int) {
 			defer connection.Close()
 
 			if err != nil {
-				fmt.Println("Impossible de communiquer avec ce noeud")
-				os.Exit(1)
+				fmt.Printf("Impossible de communiquer avec le noeud qui a pour adresse : %s\n", ad.ip)
 			}
 
 			// message de la forme INFO 127.0.0.1:8080
