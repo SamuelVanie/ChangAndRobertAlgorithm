@@ -39,7 +39,7 @@ func main() {
 
 	n1 := newNoeud(numConv, text, portNum)
 
-	fmt.Printf("Bienvenue noeud %d\nAdresse %s:%d\nPoids %d Voulez-vous lancer l'élection? Oui(O) ou Non(N)\n", n1.numeroOrdre, n1.ad.ip, n1.ad.port, n1.moi)
+        fmt.Printf("Bienvenue noeud %d\nAdresse %s:%d\nPoids %d Voulez-vous lancer l'élection? Oui(O) ou Non(N)\n", n1.numeroOrdre, n1.ad.ip, n1.ad.port, n1.moi)
 
 	choix, _ := reader.ReadString('\n')
 	choix = strings.Trim(choix, " \r\n")
@@ -55,5 +55,4 @@ func main() {
 	}
 
 	wg.Wait()
-
 }
