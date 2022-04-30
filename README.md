@@ -1,6 +1,6 @@
 # Chang et Robert Algorithme d'élection
 Algorithme de Chang et Robert 
-Cours de systèmes distribués Institut National Polytechnique de Yamoussoukro 
+Cours de systèmes distribués Institut National Polytechnique de Yamoussoukro
 
 ---
 
@@ -23,11 +23,10 @@ sont distincts.
 
 ### Vue sur le programme
 - Le programme fonctionne entre plusieurs ordinateurs grâce à une communication TCP
-- Le fichier ```ip.txt``` contient la liste des adresses ip des noeuds de l'anneau.
+- Le fichier ```ip.txt``` contient l'adresse du noeud suivant.
 - Le format des adresses est le suivant : ```127.0.0.1:8080```
-- Si un nouveau noeud qui n'appartient pas à l'anneau départ (ie : n'est pas contenu dans le fichier ip.txt) alors un message de diffusion est envoyé aux noeuds de l'anneau pour l'ajouter à l'anneau.
-	- Ajouter un noeud n'est disponible que pour la session courante, un noeud qui se déconnecte et se reconnecte, aura oublié le nouveau noeud.
-	- Pour maintenir le noeud dans l'anneau, il faut l'ajouter au fichier
+- Si un nouveau noeud qui n'appartient pas à l'anneau départ (ie : n'est le suivant de personne) alors un message de diffusion est envoyé aux noeuds de l'anneau pour l'ajouter à l'anneau.
+- Si le fichier de configuration n'existe pas ou ne contient d'adresse ip alors le programme demande a l'utilisateur d'entree l'adresse ip du noeud suivant. Le format est identique a celui du fichier : `127.0.0.1:8080`
 
 
 
@@ -40,12 +39,64 @@ sont distincts.
 
 ### Exécuter
 - Vous pouvez directement exécuter les fichiers binaires générés par moi-même dans le projet
-- Le fichier changAndRobertWin.exe pour *Windows* et le fichier changAndRobert pour *Linux* et chandAndRobertMac pour *Mac*
+- Le fichier changAndRobertWin.exe pour *Windows* et le fichier changAndRobertLinux pour *Linux* et chandAndRobertMac pour *Mac*
+
+
+### Demonstration du fonctionnement
+
+Adresse : 127.0.0.1
+
+Port : 5999
+
+Numero de noeud : 1
+
+Le poids (numero moi dans le cours) est attribue automatiquement 
+
+L'utilisateur peut choisir de lancer l'election ou non
+
+Le programme se met en attente des autres noeuds
+
+![Election](images/Pasted_image_20220428185833.png)
+
+
+Si Aucune adresse ne se trouve dans le fichier ou le fichier de configuration n'existe pas :
+
+
+![Fichier de configuration absent](images/Pasted_image_20220428190025.png)
+
+
+**Deroulement de l'election**
+
+- noeud 2(a lance l'election)
+
+![Election Deroulement](images/Pasted_image_20220428195637.png)
+
+
+- noeud 1
+
+![Point de vue du noeud 1](images/Pasted_image_20220428195800.png)
+
+
+**Il y a transmission d'un message EXIT <_numero_du_noeud> lorsqu'un noeud quitte l'anneau avec la commande Ctrl+C**
+
+
+S'il ne reste plus aucun noeud dans l'anneau le message **Plus aucun noeud dans l'anneau** s'affiche et le programme s'arrete.
+
+![Plus de noeud dans l'anneau](images/Pasted_image_20220428195939.png)
+
+
+**Arrivee d'un nouveau noeud**
+
+- Le nouveau noeud a la possibilite de lancer une nouvelle election
+
+![Question relancer election](images/Pasted_image_20220428200556.png)
+
+
 
 
 ---
 
 ## Auteur
 
-💪 **Samuel Michaël Vanié** ✅
+ **Samuel Michaël Vanié** ✅
 **Computer Sciences Engineering Student**
