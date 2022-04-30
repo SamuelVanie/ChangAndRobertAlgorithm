@@ -56,25 +56,25 @@ L'utilisateur peut choisir de lancer l'election ou non
 
 Le programme se met en attente des autres noeuds
 
-![Election](images/Pasted image 20220428185833.png)
+![Election](images/Pasted_image_20220428185833.png)
 
 
 Si Aucune adresse ne se trouve dans le fichier ou le fichier de configuration n'existe pas :
 
 
-![Fichier de configuration absent](images/Pasted image 20220428190025.png)
+![Fichier de configuration absent](images/Pasted_image_20220428190025.png)
 
 
 **Deroulement de l'election**
 
 - noeud 2(a lance l'election)
 
-![Election Deroulement](images/Pasted image 20220428195637.png)
+![Election Deroulement](images/Pasted_image_20220428195637.png)
 
 
 - noeud 1
 
-![Point de vue du noeud 1](images/Pasted image 20220428195800.png)
+![Point de vue du noeud 1](images/Pasted_image_20220428195800.png)
 
 
 **Il y a transmission d'un message EXIT <_numero_du_noeud> lorsqu'un noeud quitte l'anneau avec la commande Ctrl+C**
@@ -82,14 +82,14 @@ Si Aucune adresse ne se trouve dans le fichier ou le fichier de configuration n'
 
 S'il ne reste plus aucun noeud dans l'anneau le message **Plus aucun noeud dans l'anneau** s'affiche et le programme s'arrete.
 
-![Plus de noeud dans l'anneau](images/Pasted image 20220428195939.png)
+![Plus de noeud dans l'anneau](images/Pasted_image_20220428195939.png)
 
 
 **Arrivee d'un nouveau noeud**
 
 - Le nouveau noeud a la possibilite de lancer une nouvelle election
 
-![Question relancer election](images/Pasted image 20220428200556.png)
+![Question relancer election](images/Pasted_image_20220428200556.png)
 
 
 
