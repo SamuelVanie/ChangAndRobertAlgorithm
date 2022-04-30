@@ -107,17 +107,16 @@ func (n *noeud) envoyerSuiv(message string){
 		os.Exit(1)
 	}
 	connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", n.suivant.ip, n.suivant.port))
-	defer connection.Close()
 
 	if err != nil{
 		fmt.Printf("Impossible de communiquer avec le noeud suivant\n\n")
 		os.Exit(1)
 	}
 
+	defer connection.Close()
 	//envoi du message
 	io.WriteString(connection, message)
 }
-
 
 // Signaler à tous qui est l'elu
 func (n *noeud) elu() {
@@ -148,8 +147,8 @@ func newNoeud(num int, ip string, port int) *noeud {
 func (n *noeud) reception() {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", n.ad.port))
 	if err != nil {
-          fmt.Println("Ecoute impossible sur ce port")
-	  syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		fmt.Println("Ecoute impossible sur ce port")
+	  os.Exit(1)
 	}
 
 	defer listener.Close()
@@ -212,18 +211,20 @@ func (n *noeud) reception() {
                             portArrivant, err := strconv.Atoi(noeudArrivant[1])
                             if err != nil {
                                     fmt.Println("Entrez plutôt un nombre comme port svp")
-				    syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+				    os.Exit(1)
                             }
                             portSuivArrivant, err := strconv.Atoi(noeudSuivNoeudArrivant[1])
 			    if err != nil {
                                     fmt.Println("Entrez plutôt un nombre comme port svp")
-				    syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+				    os.Exit(1)
                             }
 				// Le noeud suivant le noeud qui vient d'arriver est le suivant du recepteur
 				// Le noeud qui vient d'arriver devient donc le suivant du recepteur
 			    if noeudSuivNoeudArrivant[0] == n.suivant.ip && portSuivArrivant == n.suivant.port{
 					n.suivant.ip = noeudArrivant[0]
 					n.suivant.port = portArrivant
+			    }else if noeudArrivant[0] == n.suivant.ip && portArrivant == n.suivant.port{
+
 			    }else{
 					// Le noeud qui vient d'arriver n'a pas pour suivant le suivant du recepteur 
 					// transmettre le message
@@ -237,7 +238,7 @@ func (n *noeud) reception() {
 			    noeudSuivPartant := strings.Split(ligne[2], ":")
 			    portNoeudPartant, err := strconv.Atoi(noeudPartant[1])
 			    if err != nil{
-					fmt.Println("Le port reçu est erroné")
+				fmt.Println("Le port reçu est erroné")
 				}
 			    
 			    portSuivPartant, err := strconv.Atoi(noeudSuivPartant[1])
